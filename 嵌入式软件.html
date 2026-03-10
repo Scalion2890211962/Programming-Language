@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>嵌入式编程闯关游戏</title>
+    <!-- 引入Tailwind CSS简化样式开发 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 自定义动画 */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .blink {
+            animation: blink 1s infinite;
+        }
+        /* 代码编辑器样式 */
+        .code-block {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background-color: #1e293b;
+            color: #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            line-height: 1.5;
+        }
+        .code-keyword { color: #93c5fd; }
+        .code-comment { color: #94a3b8; }
+        .code-variable { color: #fbbf24; }
+        .code-function { color: #a78bfa; }
+        .code-selectable {
+            background-color: #334155;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        .code-selectable:hover {
+            background-color: #475569;
+        }
+        .code-selected {
+            background-color: #0ea5e9;
+            color: white;
+        }
+        /* 硬件模拟样式 */
+        .led {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #475569;
+            margin: 0.5rem;
+            transition: background-color 0.3s;
+        }
+        .led-on {
+            background-color: #ef4444;
+            box-shadow: 0 0 15px #ef4444;
+        }
+        .button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .button-pressed {
+            background-color: #0ea5e9;
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col">
+    <!-- 游戏头部 -->
+    <header class="bg-slate-800 p-4 shadow-md">
+        <h1 class="text-2xl font-bold text-center">嵌入式编程闯关</h1>
+    </header>
+
+    <!-- 游戏主内容区 -->
+    <main class="flex-1 container mx-auto p-4 md:p-8">
+        <!-- 首页 -->
+        <div id="home-screen" class="flex flex-col items-center justify-center h-full py-8">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold mb-4">欢迎来到嵌入式编程世界！</h2>
+                <p class="text-slate-300 max-w-md mx-auto">
+                    通过闯关学习嵌入式编程基础知识，从GPIO控制到传感器交互，一步步成为嵌入式工程师！
+                </p>
+            </div>
+            <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-xl transition">
+                开始闯关
+            </button>
+        </div>
+
+        <!-- 关卡选择 -->
+        <div id="level-select" class="hidden">
+            <h2 class="text-2xl font-bold mb-6">选择关卡</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- 关卡1 -->
+                <div class="level-card bg-slate-800 rounded-lg p-4 hover:bg-slate-700 cursor-pointer transition" data-level="1">
+                    <h3 class="text-xl font-bold">关卡1</h3>
+                    <p class="text-slate-300 mt-2">GPIO控制LED</p>
+                    <div class="mt-4 text-sm text-green-400">✅ 解锁</div>
+                </div>
+                <!-- 关卡2（锁定） -->
+                <div class="level-card bg-slate-800/50 rounded-lg p-4 cursor-not-allowed opacity-50" data-level="2">
+                    <h3 class="text-xl font-bold">关卡2</h3>
+                    <p class="text-slate-300 mt-2">按键中断控制</p>
+                    <div class="mt-4 text-sm text-red-400">🔒 未解锁</div>
+                </div>
+                <!-- 关卡3（锁定） -->
+                <div class="level-card bg-slate-800/50 rounded-lg p-4 cursor-not-allowed opacity-50" data-level="3">
+                    <h3 class="text-xl font-bold">关卡3</h3>
+                    <p class="text-slate-300 mt-2">定时器控制LED闪烁</p>
+                    <div class="mt-4 text-sm text-red-400">🔒 未解锁</div>
+                </div>
+                <!-- 关卡4（锁定） -->
+                <div class="level-card bg-slate-800/50 rounded-lg p-4 cursor-not-allowed opacity-50" data-level="4">
+                    <h3 class="text-xl font-bold">关卡4</h3>
+                    <p class="text-slate-300 mt-2">串口数据收发</p>
+                    <div class="mt-4 text-sm text-red-400">🔒 未解锁</div>
+                </div>
+            </div>
+            <button id="back-home" class="mt-8 bg-slate-700 hover:bg-slate-600 text-white py-2 px-6 rounded-lg transition">
+                返回首页
+            </button>
+        </div>
+
+        <!-- 关卡1：GPIO控制LED -->
+        <div id="level-1" class="hidden">
+            <div class="flex flex-col md:flex-row gap-8">
+                <!-- 左侧：硬件模拟区 -->
+                <div class="w-full md:w-1/2 bg-slate-800 rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-4">硬件模拟：LED控制</h3>
+                    <div class="flex items-center mb-6">
+                        <div id="led1" class="led"></div>
+                        <span class="ml-4">LED1 (PA0)</span>
+                    </div>
+                    <div class="mt-6">
+                        <button id="run-code" class="bg-green-600 hover:bg-green-700 text-white py-2 px-6 rounded-lg transition mr-4">
+                            运行代码
+                        </button>
+                        <button id="reset-level" class="bg-slate-700 hover:bg-slate-600 text-white py-2 px-6 rounded-lg transition">
+                            重置关卡
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 右侧：代码编辑区 -->
+                <div class="w-full md:w-1/2">
+                    <h3 class="text-xl font-bold mb-4">编写代码：控制LED点亮</h3>
+                    <p class="text-slate-300 mb-4">任务：选择正确的代码片段，将LED1设置为输出并点亮</p>
+                    <div class="code-block">
+                        <span class="code-comment">// 初始化GPIO口</span><br>
+                        GPIO_InitTypeDef GPIO_InitStruct;<br>
+                        RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);<br>
+                        <br>
+                        GPIO_InitStruct.GPIO_Pin = GPIO_Pin_0;<br>
+                        <span class="code-selectable" id="opt1">GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;</span><br>
+                        <span class="code-selectable" id="opt2">GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;</span><br>
+                        GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;<br>
+                        GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;<br>
+                        GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;<br>
+                        GPIO_Init(GPIOA, &GPIO_InitStruct);<br>
+                        <br>
+                        <span class="code-comment">// 控制LED点亮</span><br>
+                        <span class="code-selectable" id="opt3">GPIO_SetBits(GPIOA, GPIO_Pin_0);</span><br>
+                        <span class="code-selectable" id="opt4">GPIO_ResetBits(GPIOA, GPIO_Pin_0);</span><br>
+                    </div>
+                    <div id="feedback" class="mt-4 p-4 rounded-lg hidden"></div>
+                    <button id="back-levels" class="mt-6 bg-slate-700 hover:bg-slate-600 text-white py-2 px-6 rounded-lg transition">
+                        返回关卡选择
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 游戏底部 -->
+    <footer class="bg-slate-800 p-4 text-center text-slate-400 text-sm">
+        嵌入式编程闯关游戏 © 2026
+    </footer>
+
+    <script>
+        // 全局变量
+        let selectedOptions = {
+            mode: null,
+            action: null
+        };
+
+        // DOM元素获取
+        const homeScreen = document.getElementById('home-screen');
+        const levelSelect = document.getElementById('level-select');
+        const level1 = document.getElementById('level-1');
+        const startBtn = document.getElementById('start-btn');
+        const backHome = document.getElementById('back-home');
+        const backLevels = document.getElementById('back-levels');
+        const levelCards = document.querySelectorAll('.level-card');
+        const runCodeBtn = document.getElementById('run-code');
+        const resetLevelBtn = document.getElementById('reset-level');
+        const led1 = document.getElementById('led1');
+        const feedback = document.getElementById('feedback');
+        const codeOptions = document.querySelectorAll('.code-selectable');
+
+        // 首页 -> 关卡选择
+        startBtn.addEventListener('click', () => {
+            homeScreen.classList.add('hidden');
+            levelSelect.classList.remove('hidden');
+        });
+
+        // 关卡选择 -> 首页
+        backHome.addEventListener('click', () => {
+            levelSelect.classList.add('hidden');
+            homeScreen.classList.remove('hidden');
+        });
+
+        // 关卡选择 -> 对应关卡
+        levelCards.forEach(card => {
+            if (!card.classList.contains('opacity-50')) {
+                card.addEventListener('click', () => {
+                    const level = card.dataset.level;
+                    levelSelect.classList.add('hidden');
+                    document.getElementById(`level-${level}`).classList.remove('hidden');
+                    resetLevel(); // 重置关卡状态
+                });
+            }
+        });
+
+        // 关卡 -> 关卡选择
+        backLevels.addEventListener('click', () => {
+            level1.classList.add('hidden');
+            levelSelect.classList.remove('hidden');
+        });
+
+        // 代码选项选择
+        codeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // 重置同类型选项
+                if (option.id === 'opt1' || option.id === 'opt2') {
+                    document.getElementById('opt1').classList.remove('code-selected');
+                    document.getElementById('opt2').classList.remove('code-selected');
+                    selectedOptions.mode = option.id === 'opt1' ? 'OUT' : 'IN';
+                } else if (option.id === 'opt3' || option.id === 'opt4') {
+                    document.getElementById('opt3').classList.remove('code-selected');
+                    document.getElementById('opt4').classList.remove('code-selected');
+                    selectedOptions.action = option.id === 'opt3' ? 'SET' : 'RESET';
+                }
+                // 选中当前选项
+                option.classList.add('code-selected');
+            });
+        });
+
+        // 运行代码
+        runCodeBtn.addEventListener('click', () => {
+            // 检查是否选择了必要选项
+            if (!selectedOptions.mode || !selectedOptions.action) {
+                showFeedback('请选择完整的代码片段！', 'red');
+                return;
+            }
+
+            // 验证答案
+            if (selectedOptions.mode === 'OUT' && selectedOptions.action === 'SET') {
+                // 正确答案
+                led1.classList.add('led-on');
+                showFeedback('🎉 恭喜！代码运行成功，LED点亮了！', 'green');
+                // 解锁下一关（简单模拟）
+                document.querySelector('[data-level="2"]').classList.remove('opacity-50', 'cursor-not-allowed');
+                document.querySelector('[data-level="2"] .text-red-400').classList.replace('text-red-400', 'text-green-400');
+                document.querySelector('[data-level="2"] .text-red-400').innerHTML = '✅ 解锁';
+            } else if (selectedOptions.mode === 'OUT' && selectedOptions.action === 'RESET') {
+                // 模式正确，动作错误
+                led1.classList.remove('led-on');
+                showFeedback('❌ LED没有点亮，检查控制LED的代码片段！', 'red');
+            } else if (selectedOptions.mode === 'IN' && selectedOptions.action === 'SET') {
+                // 模式错误，动作正确
+                led1.classList.remove('led-on');
+                showFeedback('❌ GPIO模式错误，需要设置为输出模式！', 'red');
+            } else {
+                // 全错
+                led1.classList.remove('led-on');
+                showFeedback('❌ 代码错误，检查GPIO模式和控制指令！', 'red');
+            }
+        });
+
+        // 重置关卡
+        resetLevelBtn.addEventListener('click', resetLevel);
+
+        // 重置关卡状态
+        function resetLevel() {
+            led1.classList.remove('led-on');
+            feedback.classList.add('hidden');
+            selectedOptions = { mode: null, action: null };
+            codeOptions.forEach(option => {
+                option.classList.remove('code-selected');
+            });
+        }
+
+        // 显示反馈信息
+        function showFeedback(msg, type) {
+            feedback.textContent = msg;
+            feedback.classList.remove('hidden', 'bg-green-500/20', 'bg-red-500/20');
+            feedback.classList.add(type === 'green' ? 'bg-green-500/20' : 'bg-red-500/20');
+        }
+    </script>
+</body>
+</html>
