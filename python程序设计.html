@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python冒险乐园 - 边玩边学Python</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Consolas", "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        /* 游戏头部 */
+        .game-header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .game-header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .game-header .level-indicator {
+            background: #3498db;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        /* 游戏主体 */
+        .game-body {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        /* 任务场景区 */
+        .scene-area {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-right: 1px solid #eee;
+        }
+
+        .scene-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .scene-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .scene-card .task-desc {
+            color: #34495e;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .scene-card .hint-btn {
+            background: #f1c40f;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            color: #2c3e50;
+            margin-top: 10px;
+        }
+
+        .hint-box {
+            background: #fff9c4;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+            color: #f57c00;
+        }
+
+        /* 编码区 */
+        .code-area {
+            flex: 2;
+            min-width: 400px;
+            padding: 20px;
+        }
+
+        #code-editor {
+            width: 100%;
+            height: 250px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 16px;
+            font-family: "Consolas", monospace;
+            resize: vertical;
+            margin-bottom: 15px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        #run-code {
+            background: #27ae60;
+            color: white;
+        }
+
+        #next-level {
+            background: #3498db;
+            color: white;
+            display: none;
+        }
+
+        #reset-code {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        /* 输出区 */
+        .output-area {
+            background: #2d2d2d;
+            color: #a9b7c6;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 150px;
+            font-family: "Consolas", monospace;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+
+        .success {
+            color: #6a9955 !important;
+        }
+
+        .error {
+            color: #f44747 !important;
+        }
+
+        /* 进度条 */
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background: #eee;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #27ae60;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* 知识点弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .modal-content h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .modal-content p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .close-modal {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 游戏头部 -->
+        <div class="game-header">
+            <h1>🐍 Python冒险乐园</h1>
+            <p>边玩边学Python，闯关解锁编程技能！</p>
+            <div class="level-indicator" id="level-title">第1关：变量与打印 - 打招呼</div>
+        </div>
+
+        <!-- 进度条 -->
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <!-- 游戏主体 -->
+        <div class="game-body">
+            <!-- 任务场景区 -->
+            <div class="scene-area">
+                <div class="scene-card">
+                    <h3>🎯 本关任务</h3>
+                    <div class="task-desc" id="task-desc">
+                        你遇到了一个新朋友，需要用Python跟TA打招呼！<br>
+                        要求：<br>
+                        1. 创建变量name，赋值为任意名字（比如"小明"）<br>
+                        2. 打印出"你好，[名字]！欢迎来到Python冒险乐园～"
+                    </div>
+                    <button class="hint-btn" onclick="toggleHint()">💡 查看提示</button>
+                    <div class="hint-box" id="hint-box">
+                        提示1：变量定义格式 → name = "你的名字"<br>
+                        提示2：打印函数 → print("你好，" + name + "！欢迎来到Python冒险乐园～")<br>
+                        提示3：字符串拼接可以用 + 号连接
+                    </div>
+                </div>
+            </div>
+
+            <!-- 编码区 -->
+            <div class="code-area">
+                <textarea id="code-editor" placeholder="在这里编写Python代码...">
+# 请在这里编写代码
+# 示例：
+# name = "小明"
+# print("你好，" + name + "！欢迎来到Python冒险乐园～")
+                </textarea>
+
+                <div class="btn-group">
+                    <button class="btn" id="run-code">▶️ 运行代码</button>
+                    <button class="btn" id="next-level">➡️ 下一关</button>
+                    <button class="btn" id="reset-code">🔄 重置代码</button>
+                </div>
+
+                <div class="output-area" id="output-area">
+                    运行结果将显示在这里...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 知识点弹窗 -->
+    <div class="modal" id="knowledge-modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Python知识点：变量与打印</h3>
+            <div id="modal-content">
+                <p>1. 变量：Python中的变量不需要声明类型，直接赋值即可，比如 name = "小明"。</p>
+                <p>2. 打印函数print()：用于输出内容到控制台，是Python最基础的输入输出函数。</p>
+                <p>3. 字符串拼接：使用 + 号可以将多个字符串连接在一起，比如 "你好，" + name + "！"。</p>
+                <p>4. 命名规则：变量名只能包含字母、数字、下划线，且不能以数字开头。</p>
+            </div>
+            <button class="close-modal" onclick="closeModal()">关闭</button>
+        </div>
+    </div>
+
+    <!-- 引入Skulpt（浏览器端Python解释器） -->
+    <script src="https://cdn.jsdelivr.net/npm/skulpt@1.3.0/dist/skulpt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/skulpt@1.3.0/dist/skulpt-stdlib.js"></script>
+
+    <script>
+        // 关卡数据（覆盖Python核心知识点）
+        const levels = [
+            {
+                title: "第1关：变量与打印 - 打招呼",
+                desc: "你遇到了一个新朋友，需要用Python跟TA打招呼！<br>要求：<br>1. 创建变量name，赋值为任意名字（比如\"小明\"）<br>2. 打印出\"你好，[名字]！欢迎来到Python冒险乐园～\"",
+                hint: "提示1：变量定义格式 → name = \"你的名字\"<br>提示2：打印函数 → print(\"你好，\" + name + \"！欢迎来到Python冒险乐园～\")<br>提示3：字符串拼接可以用 + 号连接",
+                check: (output) => output.includes("你好，") && output.includes("！欢迎来到Python冒险乐园～"),
+                knowledge: {
+                    title: "Python知识点：变量与打印",
+                    content: "<p>1. 变量：Python中的变量不需要声明类型，直接赋值即可，比如 name = \"小明\"。</p><p>2. 打印函数print()：用于输出内容到控制台，是Python最基础的输入输出函数。</p><p>3. 字符串拼接：使用 + 号可以将多个字符串连接在一起，比如 \"你好，\" + name + \"！\"。</p><p>4. 命名规则：变量名只能包含字母、数字、下划线，且不能以数字开头。</p>"
+                }
+            },
+            {
+                title: "第2关：数字运算 - 计算宝藏数量",
+                desc: "你找到了3个宝箱，每个宝箱里有8个金币，还有额外的5个散金币，计算总金币数并打印！<br>要求：<br>1. 用变量存储宝箱数、每个宝箱金币数、散金币数<br>2. 计算总金币数：总金币 = 宝箱数 × 每个宝箱金币数 + 散金币数<br>3. 打印\"总金币数：XX\"",
+                hint: "提示1：数值变量不需要加引号，比如 box_num = 3<br>提示2：乘法用 * 号，加法用 + 号<br>提示3：打印时可以拼接字符串和数字，比如 print(\"总金币数：\" + str(total))",
+                check: (output) => output.includes("总金币数：") && (output.includes("29") || output.includes("29.0")),
+                knowledge: {
+                    title: "Python知识点：数字运算",
+                    content: "<p>1. 数值类型：Python支持整数(int)和浮点数(float)，直接赋值即可。</p><p>2. 基本运算：+（加）、-（减）、*（乘）、/（除）、//（整除）、%（取余）、**（幂）。</p><p>3. 运算优先级：先乘除后加减，括号可以改变优先级。</p><p>4. 类型转换：str()可以将数字转为字符串，方便拼接打印。</p>"
+                }
+            },
+            {
+                title: "第3关：条件判断 - 门禁系统",
+                desc: "冒险乐园的门禁需要验证年龄，只有年满18岁才能进入！<br>要求：<br>1. 创建变量age，赋值为任意数字<br>2. 使用if-else判断：如果age≥18，打印\"欢迎进入冒险乐园！\"；否则打印\"未满18岁，禁止进入～\"",
+                hint: "提示1：条件判断格式 → if age >= 18:<br>提示2：if/else后必须加冒号 :<br>提示3：代码块需要缩进（4个空格）",
+                check: (output) => output.includes("欢迎进入冒险乐园！") || output.includes("未满18岁，禁止进入～"),
+                knowledge: {
+                    title: "Python知识点：条件判断",
+                    content: "<p>1. if语句：用于根据条件执行不同的代码块，格式为 if 条件: 代码块。</p><p>2. else语句：当if条件不满足时执行，格式为 else: 代码块。</p><p>3. 缩进：Python用缩进来区分代码块，通常是4个空格，不能省略。</p><p>4. 比较运算符：>（大于）、<（小于）、>=（大于等于）、<=（小于等于）、==（等于）、!=（不等于）。</p>"
+                }
+            },
+            {
+                title: "第4关：循环语句 - 收集宝石",
+                desc: "你需要收集1-5号宝石，每收集一个就打印\"收集到X号宝石！\"<br>要求：<br>1. 使用for循环遍历1到5的数字<br>2. 每次循环打印对应的宝石收集信息",
+                hint: "提示1：for循环格式 → for i in range(1,6):<br>提示2：range(1,6)表示1到5（左闭右开）<br>提示3：打印时用 str(i) 将数字转为字符串",
+                check: (output) => output.includes("收集到1号宝石！") && output.includes("收集到2号宝石！") && output.includes("收集到3号宝石！") && output.includes("收集到4号宝石！") && output.includes("收集到5号宝石！"),
+                knowledge: {
+                    title: "Python知识点：循环语句",
+                    content: "<p>1. for循环：用于遍历可迭代对象（如数字范围、列表），格式为 for 变量 in 可迭代对象: 代码块。</p><p>2. range()函数：生成数字序列，range(a,b)生成a到b-1的整数。</p><p>3. 循环缩进：循环体代码需要缩进，和if语句一样。</p><p>4. 循环应用场景：需要重复执行相同/相似操作时使用。</p>"
+                }
+            },
+            {
+                title: "第5关：函数定义 - 计算面积",
+                desc: "你需要定义一个函数来计算矩形面积，帮助冒险乐园规划场地！<br>要求：<br>1. 定义函数calculate_area，接收width和height两个参数<br>2. 函数内计算面积（宽×高）并返回结果<br>3. 调用函数，传入任意宽高，打印\"矩形面积：XX\"",
+                hint: "提示1：函数定义 → def calculate_area(width, height):<br>提示2：返回值用 return 语句<br>提示3：调用函数 → area = calculate_area(5, 8)",
+                check: (output) => output.includes("矩形面积：") && !output.includes("错误"),
+                knowledge: {
+                    title: "Python知识点：函数定义",
+                    content: "<p>1. 函数定义：用def关键字，格式为 def 函数名(参数): 代码块。</p><p>2. 参数：函数接收的输入，可以有多个，用逗号分隔。</p><p>3. return语句：返回函数的执行结果，没有return则返回None。</p><p>4. 函数调用：函数名(参数值)，可以将返回值赋值给变量。</p><p>5. 函数作用：封装重复使用的代码，提高代码复用性。</p>"
+                }
+            }
+        ];
+
+        // 全局变量
+        let currentLevel = 0;
+        const codeEditor = document.getElementById("code-editor");
+        const outputArea = document.getElementById("output-area");
+        const runCodeBtn = document.getElementById("run-code");
+        const nextLevelBtn = document.getElementById("next-level");
+        const resetCodeBtn = document.getElementById("reset-code");
+        const levelTitle = document.getElementById("level-title");
+        const taskDesc = document.getElementById("task-desc");
+        const hintBox = document.getElementById("hint-box");
+        const progressBar = document.getElementById("progress-bar");
+        const modal = document.getElementById("knowledge-modal");
+        const modalTitle = document.getElementById("modal-title");
+        const modalContent = document.getElementById("modal-content");
+
+        // 初始化关卡
+        function initLevel(levelIdx) {
+            const level = levels[levelIdx];
+            // 更新关卡信息
+            levelTitle.textContent = level.title;
+            taskDesc.innerHTML = level.desc;
+            hintBox.innerHTML = level.hint;
+            // 重置代码编辑器和输出
+            codeEditor.value = "";
+            outputArea.textContent = "运行结果将显示在这里...";
+            outputArea.className = "output-area";
+            // 隐藏下一关按钮
+            nextLevelBtn.style.display = "none";
+            // 更新进度条
+            progressBar.style.width = `${(levelIdx / levels.length) * 100}%`;
+        }
+
+        // 运行Python代码
+        function runPythonCode() {
+            const code = codeEditor.value.trim();
+            if (!code) {
+                outputArea.textContent = "❌ 错误：请输入Python代码！";
+                outputArea.className = "output-area error";
+                return;
+            }
+
+            // 配置Skulpt
+            Sk.configure({
+                output: (text) => {
+                    outputArea.textContent += text;
+                },
+                read: (file) => {
+                    if (Sk.builtinFiles && Sk.builtinFiles["files"][file]) {
+                        return Sk.builtinFiles["files"][file];
+                    }
+                    throw `文件未找到：${file}`;
+                }
+            });
+
+            // 清空输出区
+            outputArea.textContent = "";
+            outputArea.className = "output-area";
+
+            try {
+                // 异步运行Python代码
+                const promise = Sk.misceval.asyncToPromise(() => {
+                    return Sk.importMainWithBody("<stdin>", false, code, true);
+                });
+
+                promise.then(() => {
+                    // 运行成功，检查是否通关
+                    checkLevelPass(levelIdx = currentLevel);
+                }, (err) => {
+                    // 运行出错
+                    outputArea.textContent = `❌ 运行错误：${err.toString()}`;
+                    outputArea.className = "output-area error";
+                });
+            } catch (e) {
+                outputArea.textContent = `❌ 语法错误：${e.message}`;
+                outputArea.className = "output-area error";
+            }
+        }
+
+        // 检查是否通关
+        function checkLevelPass(levelIdx) {
+            const level = levels[levelIdx];
+            const output = outputArea.textContent;
+
+            if (level.check(output)) {
+                // 通关成功
+                outputArea.textContent += "\n\n🎉 恭喜！通关成功！解锁Python知识点 →";
+                outputArea.className = "output-area success";
+                nextLevelBtn.style.display = "inline-block";
+                // 显示知识点弹窗（3秒后自动弹出）
+                setTimeout(() => {
+                    showKnowledgeModal(levelIdx);
+                }, 1500);
+            } else {
+                // 未通关
+                outputArea.textContent += "\n\n❌ 未达到要求，请根据提示修改代码后重试！";
+                outputArea.className = "output-area error";
+            }
+        }
+
+        // 显示知识点弹窗
+        function showKnowledgeModal(levelIdx) {
+            const level = levels[levelIdx];
+            modalTitle.textContent = level.knowledge.title;
+            modalContent.innerHTML = level.knowledge.content;
+            modal.style.display = "flex";
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            modal.style.display = "none";
+        }
+
+        // 切换提示显示/隐藏
+        function toggleHint() {
+            hintBox.style.display = hintBox.style.display === "block" ? "none" : "block";
+        }
+
+        // 重置代码
+        function resetCode() {
+            codeEditor.value = "";
+            outputArea.textContent = "运行结果将显示在这里...";
+            outputArea.className = "output-area";
+        }
+
+        // 下一关
+        function goToNextLevel() {
+            if (currentLevel < levels.length - 1) {
+                currentLevel++;
+                initLevel(currentLevel);
+            } else {
+                // 所有关卡完成
+                alert("🎊 恭喜你完成所有关卡！你已经掌握了Python基础核心知识点！");
+                currentLevel = 0;
+                initLevel(currentLevel);
+            }
+        }
+
+        // 绑定事件
+        runCodeBtn.addEventListener("click", runPythonCode);
+        nextLevelBtn.addEventListener("click", goToNextLevel);
+        resetCodeBtn.addEventListener("click", resetCode);
+
+        // 初始化第一关
+        initLevel(0);
+
+        // 点击弹窗外区域关闭弹窗
+        window.addEventListener("click", (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
